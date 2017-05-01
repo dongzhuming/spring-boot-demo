@@ -27,7 +27,7 @@ public class CustomerService {
 	}
 
 	public Customer get(Integer id) {
-		return repo.getOne(id);
+		return repo.findOne(id);
 	}
 
 	public void create(Customer customer) {

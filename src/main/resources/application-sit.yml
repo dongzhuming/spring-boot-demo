@@ -1,0 +1,16 @@
+server:
+ port: 8080
+ contextPath: /
+ 
+queues:
+ toListen:
+  - demo.queue.1
+  - demo.queue.2
+  - demo.queue.3
+  
+spring:
+ h2:
+  console:
+   enabled: true
+   path: /h2
+  

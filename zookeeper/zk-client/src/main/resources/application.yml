@@ -1,0 +1,11 @@
+server:
+ port: 8844
+
+spring:
+ application:
+  name: tomcat-client
+ cloud:
+  zookeeper:
+   connect-string: localhost:2181
+   discovery:
+    register: false

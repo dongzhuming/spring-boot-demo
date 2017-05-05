@@ -1,0 +1,5 @@
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://10.4.168.53:8761/eureka/

@@ -1,0 +1,16 @@
+log: info
+
+spring:
+  hadoop:
+    config:
+      fs:
+        defaultFS: hdfs://10.4.168.180:9000
+
+
+hive:
+  jdbc:
+    url: jdbc:hive2://10.4.168.180:10000
+    driver: org.apache.hive.jdbc.HiveDriver
+    username: root
+    password: root
+

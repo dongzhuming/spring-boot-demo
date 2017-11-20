@@ -8,8 +8,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
-import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,6 +22,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -38,8 +39,8 @@ public class BootifulReactiveApplication {
 
     @Bean
     RouterFunction<ServerResponse> router(PersonHandler personHandler) {
-        return route(GET("/persons").and(accept(APPLICATION_JSON)), request -> personHandler.all())
-                .andRoute(GET("/persons/{id}").and(accept(APPLICATION_JSON)), request -> personHandler.byId(request));
+        return route(GET("/persons").and(accept(APPLICATION_JSON)), personHandler::all)
+                .andRoute(GET("/persons/{id}").and(accept(APPLICATION_JSON)), personHandler::byId);
     }
 
     public static void main(String[] args) {
@@ -57,14 +58,14 @@ class PersonHandler {
     }
 
 
-    public Mono<ServerResponse> all() {
-        Flux<Person> people = personRepository.all();
-        return ok().contentType(APPLICATION_JSON).body(people, Person.class);
+    public Mono<ServerResponse> all(ServerRequest request) {
+        Flux<Person> people = Flux.fromStream(personRepository.all());
+        return ok().contentType(APPLICATION_JSON).body(BodyInserters.fromPublisher(people, Person.class));
     }
 
     public Mono<ServerResponse> byId(ServerRequest request) {
-        Mono<Person> person = personRepository.findById(request.pathVariable("id"));
-        return ok().body(BodyInserters.fromPublisher(person, Person.class));
+        Mono<Person> person = Mono.fromFuture(personRepository.byId(request.pathVariable("id")));
+        return ok().contentType(APPLICATION_JSON).body(BodyInserters.fromPublisher(person, Person.class));
     }
 }
 
@@ -80,16 +81,19 @@ class SampleDataCLR implements CommandLineRunner {
     @Override
     public void run(String... Strings) throws Exception {
         Stream.of("a", "b", "c").forEach((name ->
-                personRepository.save(new Person(name, new Random().nextInt(100)))));
-        personRepository.findAll().toStream().forEach(System.out::println);
+                personRepository.insert(new Person(name, new Random().nextInt(100)))));
+        personRepository.findAll().forEach(System.out::println);
     }
 }
 
 @Repository
-interface PersonRepository extends ReactiveMongoRepository<Person, String> {
+interface PersonRepository extends MongoRepository<Person, String> {
+
+    @Query("{'id': ?0}")
+    CompletableFuture<Person> byId(String id);
 
     @Query("{}")
-    Flux<Person> all();
+    Stream<Person> all();
 }
 
 @Document

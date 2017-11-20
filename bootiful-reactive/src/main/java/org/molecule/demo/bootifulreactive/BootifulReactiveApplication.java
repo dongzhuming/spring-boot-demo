@@ -41,13 +41,6 @@ public class BootifulReactiveApplication {
         return route(GET("/persons").and(accept(APPLICATION_JSON)), request -> personHandler.all())
                 .andRoute(GET("/persons/{id}").and(accept(APPLICATION_JSON)), request -> personHandler.byId(request));
     }
-//    @Bean
-//    RouterFunction<?> routes(PersonRepository personRepository) {
-//        return nest(path("/person"),
-//                route(RequestPredicates.GET("/{id}"),
-//                request -> ok().body(personRepository.findById(request.pathVariable("id")), Person.class)));
-//    }
-
 
     public static void main(String[] args) {
         SpringApplication.run(BootifulReactiveApplication.class, args);

@@ -1,6 +1,6 @@
 package org.molecule.demo.bootifulreactive;
 
-import com.mongodb.connection.Server;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -8,11 +8,16 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import org.springframework.http.server.reactive.HttpHandler;
 import org.springframework.http.server.reactive.ReactorHttpHandlerAdapter;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.reactive.config.EnableWebFlux;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerRequest;
@@ -22,29 +27,34 @@ import reactor.core.publisher.Mono;
 import reactor.ipc.netty.http.server.HttpServer;
 
 import java.util.Random;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
-import static org.springframework.web.reactive.function.BodyInserters.fromObject;
+
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.web.reactive.function.server.RequestPredicates.*;
+import static org.springframework.web.reactive.function.server.RequestPredicates.accept;
+import static org.springframework.web.reactive.function.server.RouterFunctions.route;
+
 
 @SpringBootApplication
+@EnableWebFlux
+@RestController
 public class BootifulReactiveApplication {
 
     @Bean
-    RouterFunction<ServerResponse> route(PersonHandler personHandler) {
-        return route(GET("/person/{id}").and(accept(APPLICATION_JSON)), personHandler::byId);
+    RouterFunction<ServerResponse> router(PersonHandler personHandler) {
+        return route(GET("/persons").and(accept(APPLICATION_JSON)), request->personHandler.all())
+                .andRoute(GET("/spersons/{id}").and(accept(APPLICATION_JSON)), request->personHandler.byId(request));
     }
-    RouterFunction<ServerResponse> helloWorldRoute =
-            RouterFunctions.route(path("/hello-world"),
-                    request -> ServerResponse.ok().body(fromObject("Hello World")));
-    @Bean
-    HttpServer server(RouterFunction<?> router) {
-        HttpHandler httpHandler = RouterFunctions.toHttpHandler(router);
-        HttpServer httpServer = HttpServer.create(8080);
-        httpServer.start(new ReactorHttpHandlerAdapter(httpHandler))
-        return httpServer;
-    }
+
+//    @Bean
+//    HttpServer server(RouterFunction<?> route) {
+//        HttpHandler httpHandler = RouterFunctions.toHttpHandler(route);
+//        HttpServer httpServer = HttpServer.create(8080);
+//        httpServer.start(new ReactorHttpHandlerAdapter(httpHandler));
+//        return httpServer;
+//    }
+
+
 
     public static void main(String[] args) {
         SpringApplication.run(BootifulReactiveApplication.class, args);
@@ -60,18 +70,14 @@ class PersonHandler {
         this.personRepository = personRepository;
     }
 
-    public Mono<ServerResponse> all(ServerRequest request) {
+    public Mono<ServerResponse> all() {
         Flux<Person> people = personRepository.all();
         return ServerResponse.ok().contentType(APPLICATION_JSON).body(people, Person.class);
     }
 
     public Mono<ServerResponse> byId(ServerRequest request) {
-        int personId = Integer.valueOf(request.pathVariable("id"));
-        Mono<ServerResponse> notFound = ServerResponse.notFound().build();
-        Mono<Person> personMono = this.repository.getPerson(personId);
-        return personMono
-                .flatMap(person -> ServerResponse.ok().contentType(APPLICATION_JSON).body(fromObject(person)))
-                .switchIfEmpty(notFound);
+        Mono<Person> person = personRepository.findById(request.pathVariable("id"));
+        return ServerResponse.ok().body(BodyInserters.fromPublisher(person, Person.class));
     }
 }
 
@@ -88,15 +94,15 @@ class SampleDataCLR implements CommandLineRunner {
     public void run(String... Strings) throws Exception {
         Stream.of("a", "b", "c").forEach((name ->
                 personRepository.save(new Person(name, new Random().nextInt(100)))));
-        personRepository.findAll().forEach(System.out::println);
+        personRepository.findAll().toStream().forEach(System.out::println);
     }
 }
 
-interface PersonRepository extends MongoRepository<Person, String> {
-    CompletableFuture<Person> findBy(String id);
+@Repository
+interface PersonRepository extends ReactiveMongoRepository<Person, String> {
 
     @Query("{}")
-    Stream<Person> all();
+    Flux<Person> all();
 }
 
 @Document

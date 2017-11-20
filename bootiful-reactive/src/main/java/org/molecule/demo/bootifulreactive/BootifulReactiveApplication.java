@@ -10,29 +10,25 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
-import org.springframework.http.server.reactive.HttpHandler;
-import org.springframework.http.server.reactive.ReactorHttpHandlerAdapter;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
-import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.RouterFunction;
-import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.ipc.netty.http.server.HttpServer;
 
 import java.util.Random;
 import java.util.stream.Stream;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.web.reactive.function.server.RequestPredicates.*;
+import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
 import static org.springframework.web.reactive.function.server.RequestPredicates.accept;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
+import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 
 
 @SpringBootApplication
@@ -42,18 +38,15 @@ public class BootifulReactiveApplication {
 
     @Bean
     RouterFunction<ServerResponse> router(PersonHandler personHandler) {
-        return route(GET("/persons").and(accept(APPLICATION_JSON)), request->personHandler.all())
-                .andRoute(GET("/spersons/{id}").and(accept(APPLICATION_JSON)), request->personHandler.byId(request));
+        return route(GET("/persons").and(accept(APPLICATION_JSON)), request -> personHandler.all())
+                .andRoute(GET("/persons/{id}").and(accept(APPLICATION_JSON)), request -> personHandler.byId(request));
     }
-
 //    @Bean
-//    HttpServer server(RouterFunction<?> route) {
-//        HttpHandler httpHandler = RouterFunctions.toHttpHandler(route);
-//        HttpServer httpServer = HttpServer.create(8080);
-//        httpServer.start(new ReactorHttpHandlerAdapter(httpHandler));
-//        return httpServer;
+//    RouterFunction<?> routes(PersonRepository personRepository) {
+//        return nest(path("/person"),
+//                route(RequestPredicates.GET("/{id}"),
+//                request -> ok().body(personRepository.findById(request.pathVariable("id")), Person.class)));
 //    }
-
 
 
     public static void main(String[] args) {
@@ -70,14 +63,15 @@ class PersonHandler {
         this.personRepository = personRepository;
     }
 
+
     public Mono<ServerResponse> all() {
         Flux<Person> people = personRepository.all();
-        return ServerResponse.ok().contentType(APPLICATION_JSON).body(people, Person.class);
+        return ok().contentType(APPLICATION_JSON).body(people, Person.class);
     }
 
     public Mono<ServerResponse> byId(ServerRequest request) {
         Mono<Person> person = personRepository.findById(request.pathVariable("id"));
-        return ServerResponse.ok().body(BodyInserters.fromPublisher(person, Person.class));
+        return ok().body(BodyInserters.fromPublisher(person, Person.class));
     }
 }
 
@@ -111,6 +105,18 @@ class Person {
     private String id;
     private String name;
     private int age;
+
+    public String getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getAge() {
+        return age;
+    }
 
     public void setId(String id) {
         this.id = id;

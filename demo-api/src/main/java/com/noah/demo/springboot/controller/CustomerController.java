@@ -18,9 +18,9 @@ public class CustomerController {
 
 	private final CustomerService customerService;
 
-	
+
 	public static ConfigurableApplicationContext applicationContext;
-	
+
 	@Autowired
 	public CustomerController(final CustomerService customerService) {
 		applicationContext.containsBean("customerController");
@@ -36,7 +36,7 @@ public class CustomerController {
 	public Customer getCustomer(@PathVariable Integer id) {
 		return customerService.get(id);
 	}
-	
+
 	@RequestMapping(method = RequestMethod.POST, value="/customers") 
 	public void create(@RequestBody Customer customer) {
 		customerService.create(customer);

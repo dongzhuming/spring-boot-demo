@@ -23,9 +23,10 @@ public class MetricsPrometheusApplication {
 
     @Bean
     public MeterRegistryCustomizer<MeterRegistry> commonTags() {
-        return (registry) -> registry.config()
-                .commonTags("application", "demo");
+//        return MeterRegistry::config;
+      return  (registry) -> registry.config().commonTags("job", "test1");
     }
+
 
     public static void main(String[] args) {
         SpringApplication.run(MetricsPrometheusApplication.class, args);

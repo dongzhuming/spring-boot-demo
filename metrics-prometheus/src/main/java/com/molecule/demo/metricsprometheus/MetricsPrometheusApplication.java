@@ -1,5 +1,7 @@
 package com.molecule.demo.metricsprometheus;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.spring.autoconfigure.MeterRegistryCustomizer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
@@ -17,6 +19,12 @@ public class MetricsPrometheusApplication {
     @GetMapping("/hi")
     public String sayHi() {
         return "Hello";
+    }
+
+    @Bean
+    public MeterRegistryCustomizer<MeterRegistry> commonTags() {
+        return (registry) -> registry.config()
+                .commonTags("application", "demo");
     }
 
     public static void main(String[] args) {

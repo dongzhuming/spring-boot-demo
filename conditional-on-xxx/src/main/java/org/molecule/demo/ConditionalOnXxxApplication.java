@@ -5,11 +5,13 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import javax.annotation.Resource;
+
 @SpringBootApplication
 public class ConditionalOnXxxApplication implements CommandLineRunner {
 
 	@Autowired
-	private BaseTestService baseTestService;
+	private BaseTestService myTestService;
 
 	public static void main(String[] args) {
 		SpringApplication.run(ConditionalOnXxxApplication.class, args);
@@ -17,6 +19,6 @@ public class ConditionalOnXxxApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		baseTestService.doSomething();
+		myTestService.doSomething();
 	}
 }
